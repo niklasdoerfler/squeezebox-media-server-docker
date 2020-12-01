@@ -21,7 +21,7 @@ RUN apt-get update && \
         pulseaudio && \
     apt-get clean
 
-RUN PACKAGE_DOWNLOAD_URL=$(curl "${PACKAGE_VERSION_URL}" | sed 's/_all\.deb/_amd64\.deb/') && \
+RUN PACKAGE_DOWNLOAD_URL=$(curl "${LATEST_PACKAGE_VERSION_URL}" | sed 's/_all\.deb/_amd64\.deb/') && \
     curl -Lsf -o /tmp/logitechmediaserver.deb $url && \
     dpkg -i /tmp/logitechmediaserver.deb && \
     rm -f /tmp/logitechmediaserver.deb && \
