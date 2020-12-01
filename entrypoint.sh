@@ -18,4 +18,4 @@ fi
 
 chown -R squeezeboxserver:squeezeboxserver $SQUEEZE_VOL
 
-exec runuser -u squeezeboxserver -- /start-squeezebox.sh "$@"
+exec runuser -u squeezeboxserver -- /squeezebox-runner.sh "$@"
