@@ -10,8 +10,6 @@ services:
       - /etc/machine-id:/etc/machine-id
       - /run/user/$uid/pulse:/run/user/$uid/pulse
       - /var/lib/dbus:/var/lib/dbus
-      - /tmp/pulseaudio.socket:/tmp/pulseaudio.socket
-      - /tmp/spotifymetadata:/tmp/spotifymetadata:ro
       - squeezebox:/srv/squeezebox
     environment:
       - PULSE_SERVER=unix:/tmp/pulseaudio.socket
