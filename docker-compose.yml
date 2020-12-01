@@ -1,0 +1,29 @@
+version: "2.3"
+
+services:
+  lms:
+    image: niklasdoerfler/squeezebox-media-server-docker
+    build: .
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /dev/shm:/dev/shm
+      - /etc/machine-id:/etc/machine-id
+      - /run/user/$uid/pulse:/run/user/$uid/pulse
+      - /var/lib/dbus:/var/lib/dbus
+      - /tmp/pulseaudio.socket:/tmp/pulseaudio.socket
+      - /tmp/spotifymetadata:/tmp/spotifymetadata:ro
+      - squeezebox:/srv/squeezebox
+    environment:
+      - PULSE_SERVER=unix:/tmp/pulseaudio.socket
+      - PULSE_COOKIE=/tmp/pulseaudio.cookie
+    user: $UID
+    ports:
+      - "9000:9000"
+      - "9090:9090"
+      - "3483:3483"
+      - "3483:3483/udp"
+    restart: always
+    init: true
+
+volumes:
+  squeezebox:
