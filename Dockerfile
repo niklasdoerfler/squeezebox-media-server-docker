@@ -2,10 +2,10 @@ FROM ubuntu:focal
 LABEL maintainer="Niklas Dörfler <niklas@doerfler-el.de>"
 
 ENV SQUEEZE_VOL /srv/squeezebox
-ENV SQUEEZEBOX_VERSION 8.0.0
+ENV SQUEEZEBOX_VERSION 8.2.0
 ENV LANG C.UTF-8
 ENV DEBIAN_FRONTEND noninteractive
-ENV LATEST_PACKAGE_VERSION_URL=http://www.mysqueezebox.com/update/?version=${SQUEEZEBOX_VERSION}&revision=1&geturl=1&os=deb
+ENV LATEST_PACKAGE_VERSION_URL=https://www.mysqueezebox.com/update/?version=${SQUEEZEBOX_VERSION}&revision=1&geturl=1&os=deb
 
 RUN apt-get update && \
     apt-get -y install \
