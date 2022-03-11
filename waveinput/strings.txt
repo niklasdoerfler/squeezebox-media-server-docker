@@ -1,0 +1,16 @@
+# String file for WaveInput plugin
+
+PLUGIN_WAVEINPUT
+	EN	WaveInput
+
+PLUGIN_WAVEINPUT_DESC
+	EN	WaveInput is a Linux only plugin is bare minimum plugin so enable routing PC sound to SqueezeCenter via ALSA.
+
+WAVIN
+	EN	WaveInput
+
+PLUGIN_WAVEINPUT_PAUSESTOP
+	EN	Pause button stops playing PC audio. 
+	
+PLUGIN_WAVEINPUT_PAUSESTOP_DESC
+	EN	If Enabled - Pause will stop playing of PC audio. On some systems if the PC audio stream is only paused - buffer fill up and error messages mnay be generated from application such as arecord or ecasound..

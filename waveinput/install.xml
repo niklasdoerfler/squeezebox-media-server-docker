@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<extension>
+	<name>PLUGIN_WAVEINPUT</name>
+	<module>Plugins::WaveInput::Plugin</module>
+	<playerMenu>RADIO</playerMenu>
+	<version>1.04</version>
+	<description>PLUGIN_WAVEINPUT_DESC</description>
+	<creator>bpa</creator>
+	<defaultState>enabled</defaultState>
+	<homepageURL></homepageURL>
+	<optionsURL>plugins/WaveInput/settings/basic.html</optionsURL>
+	<icon>plugins/WaveInput/html/images/waveinput.png</icon>
+	<type>2</type><!-- type=extension -->
+	<targetApplication>
+		<id>Squeezecenter</id>
+		<minVersion>7.3</minVersion>
+		<maxVersion>*</maxVersion>
+	</targetApplication>
+	<targetPlatform>Linux</targetPlatform>
+
+</extension>
