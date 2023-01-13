@@ -6,6 +6,9 @@ ENV SQUEEZEBOX_VERSION 8.2.0
 ENV LANG C.UTF-8
 ENV DEBIAN_FRONTEND noninteractive
 ENV LATEST_PACKAGE_VERSION_URL=https://www.mysqueezebox.com/update/?version=${SQUEEZEBOX_VERSION}&revision=1&geturl=1&os=deb
+ENV WAVIN_BACKEND pulse
+ENV WAVIN_SNAPSERVER_HOST pulse
+ENV WAVIN_PULSEAUDIO_SERVER pulse
 
 RUN apt-get update && \
     apt-get -y install \
@@ -18,7 +21,12 @@ RUN apt-get update && \
         sox \
         libio-socket-ssl-perl \
         tzdata \
-        pulseaudio && \
+        pulseaudio \ 
+        libpangoxft-1.0-0 \
+        libpangox-1.0-0 \
+        libavahi-client3 \
+        libcrypt-openssl-rsa-perl \
+        xauth && \
     apt-get clean
 
 RUN PACKAGE_DOWNLOAD_URL=$(curl "${LATEST_PACKAGE_VERSION_URL}" | sed 's/_all\.deb/_amd64\.deb/') && \
@@ -26,6 +34,12 @@ RUN PACKAGE_DOWNLOAD_URL=$(curl "${LATEST_PACKAGE_VERSION_URL}" | sed 's/_all\.d
     dpkg -i /tmp/logitechmediaserver.deb && \
     rm -f /tmp/logitechmediaserver.deb && \
     apt-get clean
+
+RUN export DOWNLOAD_URL=$(curl -s https://api.github.com/repos/badaix/snapcast/releases/latest | grep "browser_download_url.*snapclient.*_amd64.deb" | cut -d '"' -f 4 | head -n 1) && wget "${DOWNLOAD_URL}" -O 'snapclient.deb' && \
+    apt install -y ./snapclient.deb && \
+    rm snapclient.deb
+
+COPY waveinput/ /var/lib/squeezeboxserver/Plugins/WaveInput/
 
 RUN userdel squeezeboxserver
 
