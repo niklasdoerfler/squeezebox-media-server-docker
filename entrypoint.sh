@@ -16,6 +16,16 @@ if [ "$SQUEEZE_VOL" ] && [ -d "$SQUEEZE_VOL" ]; then
     done
 fi
 
+if [ "$WAVIN_BACKEND" = "pulse" ]; then
+    echo "Enabling pulse backend..."
+    cp /var/lib/squeezeboxserver/Plugins/WaveInput/custom-convert.pulse.conf /var/lib/squeezeboxserver/Plugins/WaveInput/custom-convert.conf
+fi
+
+if [ "$WAVIN_BACKEND" = "snap" ]; then
+    echo "Enabling snap backend..."
+    cp /var/lib/squeezeboxserver/Plugins/WaveInput/custom-convert.snap.conf /var/lib/squeezeboxserver/Plugins/WaveInput/custom-convert.conf
+fi
+
 chown -R squeezeboxserver:squeezeboxserver $SQUEEZE_VOL
 
 exec runuser -u squeezeboxserver -- /squeezebox-runner.sh "$@"

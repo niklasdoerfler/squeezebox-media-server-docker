@@ -6,6 +6,9 @@ ENV SQUEEZEBOX_VERSION 8.2.0
 ENV LANG C.UTF-8
 ENV DEBIAN_FRONTEND noninteractive
 ENV LATEST_PACKAGE_VERSION_URL=https://www.mysqueezebox.com/update/?version=${SQUEEZEBOX_VERSION}&revision=1&geturl=1&os=deb
+ENV WAVIN_BACKEND pulse
+ENV WAVIN_SNAPSERVER_HOST pulse
+ENV WAVIN_PULSEAUDIO_SERVER pulse
 
 RUN apt-get update && \
     apt-get -y install \
@@ -22,6 +25,7 @@ RUN apt-get update && \
         libpangoxft-1.0-0 \
         libpangox-1.0-0 \
         libavahi-client3 \
+        libcrypt-openssl-rsa-perl \
         xauth && \
     apt-get clean
 
