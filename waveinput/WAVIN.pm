@@ -124,7 +124,7 @@ sub getMetadataFor {
 
 	my $filename = '/tmp/wavinspotify/spotifymetadata';
 	open(my $fh, '<:encoding(UTF-8)', $filename)
-		or die "Could not open file '$filename' $!";
+		or $log->warn("Unable to open spotifymetadata.");
 
 	my $counter = 0;
 	my $artist = '';
