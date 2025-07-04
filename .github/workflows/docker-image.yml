@@ -3,18 +3,42 @@ name: Docker Image CI
 on:
   release:
     types: [published]
+  push:
+    branches:
+      - "**"
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Determine if this is a release
+        id: is_release
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "release=true" >> $GITHUB_OUTPUT
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "release=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Login to DockerHub Registry
-        run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-      - name: Get the version
-        id: vars
-        run: echo ::set-output name=tag::$(echo ${GITHUB_REF:10})
-      - name: Build the tagged Docker image
-        run: docker build . --file Dockerfile --tag niklasdoerfler/squeezebox-media-server-docker:${{ steps.vars.outputs.tag }}
-      - name: Push the tagged Docker image
-        run: docker push niklasdoerfler/squeezebox-media-server-docker:${{ steps.vars.outputs.tag }}
+        if: steps.is_release.outputs.release == 'true'
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build Docker image
+        run: |
+          if [ "${{ steps.is_release.outputs.release }}" == "true" ]; then
+            TAG=${{ steps.is_release.outputs.tag }}
+          else
+            TAG="test-${{ github.sha }}"
+          fi
+          echo "Using tag: $TAG"
+          docker build . --file Dockerfile --tag niklasdoerfler/squeezebox-media-server-docker:$TAG
+
+      - name: Push Docker image (only on release)
+        if: steps.is_release.outputs.release == 'true'
+        run: |
+          docker push niklasdoerfler/squeezebox-media-server-docker:${{ steps.is_release.outputs.tag }}
