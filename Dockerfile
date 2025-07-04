@@ -22,7 +22,8 @@ RUN apt-get update && \
         xauth && \
     apt-get clean
 
-RUN export DOWNLOAD_URL="https://github.com/badaix/snapcast/releases/download/v0.31.0/snapclient_0.31.0-1_amd64_bookworm_with-pulse.deb" && wget "${DOWNLOAD_URL}" -O 'snapclient.deb' && \
+ARG SNAPCLIENT_VERSION="0.31.0"
+RUN export DOWNLOAD_URL="https://github.com/badaix/snapcast/releases/download/v${SNAPCLIENT_VERSION}/snapclient_${SNAPCLIENT_VERSION}-1_amd64_bookworm_with-pulse.deb" && wget "${DOWNLOAD_URL}" -O 'snapclient.deb' && \
     apt install -y ./snapclient.deb && \
     rm snapclient.deb
 
