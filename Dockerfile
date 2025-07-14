@@ -16,6 +16,7 @@ RUN apt-get update && \
         sox \
         libio-socket-ssl-perl \
         tzdata \
+        mbuffer \
         pulseaudio \
         libavahi-client3 \
         libcrypt-openssl-rsa-perl \

@@ -8,12 +8,12 @@ fi
 
 if [ "$WAVIN_BACKEND" = "pulse" ]; then
     echo "Enabling pulse backend..."
-    cp /lms/Plugins/WaveInput/custom-convert.pulse.conf /lms/Plugins/WaveInput/custom-convert.conf
+    cp /lms/Plugins/WaveInput/stream_worker_pulse.sh /lms/Plugins/WaveInput/stream_worker.sh
 fi
 
 if [ "$WAVIN_BACKEND" = "snap" ]; then
     echo "Enabling snap backend..."
-    cp /lms/Plugins/WaveInput/custom-convert.snap.conf /lms/Plugins/WaveInput/custom-convert.conf
+    cp /lms/Plugins/WaveInput/stream_worker_snap.sh /lms/Plugins/WaveInput/stream_worker.sh
 fi
 
 exec /squeezebox-runner.sh "$@"
