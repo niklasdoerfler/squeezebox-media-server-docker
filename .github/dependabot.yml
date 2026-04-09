@@ -6,10 +6,3 @@ updates:
       interval: "daily"
     allow:
       - dependency-name: "ghcr.io/lms-community/lyrionmusicserver"
-    ignore:
-      - dependency-name: "ghcr.io/lms-community/lyrionmusicserver"
-        versions:
-          - "*-dev"
-          - "*-alpha*"
-          - "*-beta*"
-          - "*-rc*"
