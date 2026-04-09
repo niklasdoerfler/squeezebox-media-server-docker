@@ -1,4 +1,4 @@
-FROM ghcr.io/lms-community/lyrionmusicserver:9.0.4-stable
+FROM ghcr.io/lms-community/lyrionmusicserver:9.1.1-stable
 LABEL maintainer="Niklas Dörfler <niklas@doerfler-el.de>"
 
 ENV WAVIN_BACKEND pulse
