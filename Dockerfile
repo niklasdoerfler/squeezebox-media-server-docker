@@ -19,7 +19,9 @@ RUN apt-get update && \
         pulseaudio \
         libavahi-client3 \
         libcrypt-openssl-rsa-perl \
-        xauth && \
+        xauth \
+        python3 \
+        python3-numpy && \
     apt-get clean
 
 ARG SNAPCLIENT_VERSION="0.31.0"
