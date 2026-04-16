@@ -29,7 +29,7 @@ my $oldartworkurl = '';
 
 sub isRemote { 1 }
 
-sub bufferThreshold { 100 }
+sub bufferThreshold { 150 }
 
 sub new {
 
