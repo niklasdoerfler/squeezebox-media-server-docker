@@ -81,6 +81,7 @@ stats = {
     "max_buffer_ms"    : 0,
     "max_rate_adjust"  : 0.0,
     "total_silence_ms" : 0,
+    "total_concealed_ms": 0,
 }
 
 
@@ -101,11 +102,25 @@ def resample_chunk(data: bytes, target_frames: int) -> bytes:
 
 
 # ---------------------------------------------------------------------------
+# Fade-in helper — applied to first real chunk after a gap to avoid click
+# ---------------------------------------------------------------------------
+FADE_IN_FRAMES = 88   # 2ms at 44100 Hz — inaudible but eliminates discontinuity
+
+def apply_fade_in(data: bytes) -> bytes:
+    """Linearly fade in the first FADE_IN_FRAMES frames of a PCM chunk."""
+    samples = np.frombuffer(data, dtype='<i2').reshape(-1, 2).copy()
+    n = min(FADE_IN_FRAMES, len(samples))
+    fade = np.linspace(0.0, 1.0, n, dtype=np.float32)
+    samples[:n] = (samples[:n] * fade[:, None]).astype(np.int16)
+    return samples.tobytes()
+
+
+# ---------------------------------------------------------------------------
 # Input thread — drains parec, discards excess
 # ---------------------------------------------------------------------------
 def drain_input():
     while True:
-        data = sys.stdin.buffer.read(CHUNK_SIZE)
+        data = sys.stdin.buffer.read1(CHUNK_SIZE)
         if not data:
             eof.set()
             return
@@ -135,7 +150,8 @@ log.info(f"rtrelay started  Kp={Kp}  MAX_RATE={MAX_RATE_ADJUST*100:.0f}%  "
 out           = sys.stdout.buffer
 last_stats    = time.monotonic()
 wall_start    = time.monotonic()
-silence_start = None  # set when bridging a gap with silence
+silence_start = None   # set when bridging a gap
+last_raw_chunk = SILENCE_CHUNK  # last real audio chunk, used for concealment
 
 
 def write_chunk(chunk: bytes) -> float:
@@ -168,7 +184,8 @@ try:
             # ---- Resume after a gap ----
             if silence_start is not None:
                 gap_ms = (time.monotonic() - silence_start) * 1000
-                log.info(f"GAP    ended after {gap_ms:.0f}ms, resuming audio")
+                if gap_ms >= 50:
+                    log.info(f"GAP    ended after {gap_ms:.0f}ms, resuming audio")
                 silence_start = None
 
             # ---- P-controller drift correction ----
@@ -194,28 +211,35 @@ try:
 
         else:
             # ---- Buffer empty — bridge with silence at real-time pace ----
-            drift_s = current_drift()
+            # Short gaps (< 20ms) are PulseAudio's natural block delivery jitter
+            # and are absorbed silently by the LMS/player buffers.
+            # Only output silence for real gaps to keep the pipe alive.
+            MAX_PIPE_GAP_MS = 20
 
-            if drift_s <= 0:
-                # At or behind real-time: output silence now
-                if silence_start is None:
-                    silence_start = time.monotonic()
-                    log.debug("GAP    input empty, bridging with silence")
+            if silence_start is None:
+                silence_start = time.monotonic()
 
-                stall_ms = write_chunk(SILENCE_CHUNK)
+            gap_so_far_ms = (time.monotonic() - silence_start) * 1000
 
-                with lock:
-                    stats["bytes_sent"]       += CHUNK_SIZE
-                    stats["total_silence_ms"] += CHUNK_MS
-
-                if stall_ms > STALL_WARN_MS:
-                    with lock:
-                        stats["total_stalls"] += 1
-                    log.warning(f"STALL (silence) LMS blocked for {stall_ms:.0f}ms  "
-                                f"stalls={stats['total_stalls']}")
-            else:
-                # Ahead of real-time — wait for next chunk from parec
+            if gap_so_far_ms < MAX_PIPE_GAP_MS:
                 time.sleep(0.001)
+                continue
+
+            drift_s = current_drift()
+            if drift_s > 0:
+                time.sleep(min(drift_s, MAX_PIPE_GAP_MS / 1000))
+
+            stall_ms = write_chunk(SILENCE_CHUNK)
+
+            with lock:
+                stats["bytes_sent"]       += CHUNK_SIZE
+                stats["total_silence_ms"] += CHUNK_MS
+
+            if stall_ms > STALL_WARN_MS:
+                with lock:
+                    stats["total_stalls"] += 1
+                log.warning(f"STALL (silence) LMS blocked for {stall_ms:.0f}ms  "
+                            f"stalls={stats['total_stalls']}")
 
         # ---- Periodic stats ----
         now = time.monotonic()

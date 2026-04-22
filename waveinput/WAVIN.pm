@@ -24,12 +24,16 @@ my $cachedir    = preferences( 'server' )->get( 'cachedir' );
 if ( !-d File::Spec->catdir( "/tmp/wavinspotify" ) ) {
     mkdir( File::Spec->catdir( "/tmp/wavinspotify" ) );
 }
+if ( !-d File::Spec->catdir( "/tmp/wavinshairport" ) ) {
+    mkdir( File::Spec->catdir( "/tmp/wavinshairport" ) );
+}
 
 my $oldartworkurl = '';
+my $imageproxy_registered = 0;
 
 sub isRemote { 1 }
 
-sub bufferThreshold { 150 }
+sub bufferThreshold { 400 }
 
 sub new {
 
@@ -54,15 +58,20 @@ sub new {
 
 	${*$self}{'contentType'} = $transcoder->{'streamformat'};
 
-	if ( CAN_IMAGEPROXY ) {
+	if ( CAN_IMAGEPROXY && !$imageproxy_registered ) {
 		require Slim::Web::ImageProxy;
 		Slim::Web::ImageProxy->import();
 		Slim::Web::ImageProxy->registerHandler(
 			match => qr/wavinspotify:image:/,
 			func  => \&_getcover,
 		);
+		Slim::Web::ImageProxy->registerHandler(
+			match => qr/wavinshairport:image:/,
+			func  => \&_getshairportcover,
+		);
+		$imageproxy_registered = 1;
 	}
-	else {
+	elsif ( !CAN_IMAGEPROXY ) {
 		$log->error( "Imageproxy not supported! Covers disabled!" );
 	}
 
@@ -121,51 +130,62 @@ sub getMetadataFor {
 
 	$log->debug("Begin Function for $url $icon");
 
+	my $spotify_file   = '/tmp/wavinspotify/spotifymetadata';
+	my $shairport_file = '/tmp/wavinshairport/shairportmetadata';
 
-	my $filename = '/tmp/wavinspotify/spotifymetadata';
-	open(my $fh, '<:encoding(UTF-8)', $filename)
-		or $log->warn("Unable to open spotifymetadata.");
+	# Use whichever metadata file was written more recently
+	my $filename = $spotify_file;
+	my $source   = 'Spotify';
+
+	if ( -f $shairport_file ) {
+		if ( !-f $spotify_file || (stat($shairport_file))[9] > (stat($spotify_file))[9] ) {
+			$filename = $shairport_file;
+			$source   = 'AirPlay';
+		}
+	}
 
 	my $counter = 0;
 	my $artist = '';
 	my $title = '';
 	my $artworkurl = '';
 
-	while (my $row = <$fh>) {
-		chomp $row;
-	#  print "$counter: $row\n";
-		if($counter == 0){ $artist = $row; }
-		if($counter == 1){ $title = $row; }
-		if($counter == 2){ $artworkurl = $row; }
-		$counter=$counter+1;
+	if ( open(my $fh, '<:encoding(UTF-8)', $filename) ) {
+		while (my $row = <$fh>) {
+			chomp $row;
+			if($counter == 0){ $artist = $row; }
+			if($counter == 1){ $title = $row; }
+			if($counter == 2){ $artworkurl = $row; }
+			$counter=$counter+1;
+		}
+		close($fh);
+	}
+	else {
+		$log->warn("Unable to open metadata file: $filename");
 	}
 
-	#log->error("Cache: $cachedir");
-	if ($artworkurl ne "")
-	{
-		if ($artworkurl ne $oldartworkurl){
-			#my $imagefilepath = File::Spec->catdir( $cachedir, 'wavinspotify', "cover.jpg" );
-			#my $wgetout = `wget -q $artworkurl -O $imagefilepath`;
-			#log->error("cachedir: $cachedir   artwork: $artworkurl");
-			#my $imageurl      = "/imageproxy/wavinspotify:image:/cover.jpg";
-			$oldartworkurl = $artworkurl;
-			$icon = $artworkurl;
+	if ($artworkurl ne "") {
+		# shairport cover art is served via imageproxy (local file)
+		my $resolved_url = ($artworkurl =~ /^wavinshairport:image:/)
+			? '/imageproxy/' . $artworkurl
+			: $artworkurl;
+
+		if ($resolved_url ne $oldartworkurl) {
+			$oldartworkurl = $resolved_url;
+			$icon = $resolved_url;
 			Slim::Control::Request::notifyFromArray( $client, [ 'newmetadata' ] );
 		}
-		$icon = $artworkurl; #"/imageproxy/wavinspotify:image:/cover.jpg"; #$oldartworkurl;
+		$icon = $resolved_url;
 	}
 
-	#$log->error("Coverurl: $icon");
+	$log->debug("Source=$source artist=$artist title=$title");
 
-#       Slim::Music::Info::setCurrentTitle( $url, 'PC WaveInput'  );
 	return {
-#       title    =>  'WaveInput',
-		title    =>  $title,
-		artist   =>  $artist,
-		bitrate  =>  "PCM",
-		icon   => $icon,
-		cover  => $icon,
-		type   => 'Spotify',
+		title   => $title,
+		artist  => $artist,
+		bitrate => "PCM",
+		icon    => $icon,
+		cover   => $icon,
+		type    => $source,
 	};
 
 }
@@ -174,17 +194,20 @@ sub getMetadataFor {
 sub _getcover {
     my ( $url, $spec, $cb ) = @_;
 
-    # $url is aforementioned image URL
-    # $spec we don't need (yet)
-    # $cb is the callback to be called with the URL
-
-    #my ( $track_id ) = $url =~ m|shairtunes:image:(.*?)$|i;
-
     my $imagefilepath = File::Spec->catdir( '/tmp/wavinspotify', "cover.jpg" );
 
-    $log->error( "_getcover called for $imagefilepath" );
+    $log->debug( "_getcover called for $imagefilepath" );
 
-    # now return the URLified file path
+    return Slim::Utils::Misc::fileURLFromPath( $imagefilepath );
+}
+
+sub _getshairportcover {
+    my ( $url, $spec, $cb ) = @_;
+
+    my $imagefilepath = File::Spec->catdir( '/tmp/wavinshairport', "cover.jpg" );
+
+    $log->debug( "_getshairportcover called for $imagefilepath" );
+
     return Slim::Utils::Misc::fileURLFromPath( $imagefilepath );
 }
 
