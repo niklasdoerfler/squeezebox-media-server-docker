@@ -50,6 +50,7 @@ MAX_BUFFER       = BYTES_PER_SEC * MAX_BUFFER_MS // 1000
 # P-controller for clock drift correction
 Kp               = 0.3
 MAX_RATE_ADJUST  = 0.02         # clamp to ±2%
+PIPE_LATENCY_MS  = 100          # target: keep this many ms of audio buffered ahead in LMS
 
 LOG_INTERVAL_S   = 10
 STALL_WARN_MS    = 50
@@ -142,7 +143,7 @@ def drain_input():
 
 threading.Thread(target=drain_input, daemon=True, name="drain").start()
 log.info(f"rtrelay started  Kp={Kp}  MAX_RATE={MAX_RATE_ADJUST*100:.0f}%  "
-         f"MAX_BUFFER={MAX_BUFFER_MS}ms  log={LOG_FILE}")
+         f"PIPE_LATENCY={PIPE_LATENCY_MS}ms  MAX_BUFFER={MAX_BUFFER_MS}ms  log={LOG_FILE}")
 
 # ---------------------------------------------------------------------------
 # Main loop — resample + write to LMS, bridge gaps with silence
@@ -163,10 +164,10 @@ def write_chunk(chunk: bytes) -> float:
 
 
 def current_drift() -> float:
-    """Return drift in seconds: positive = audio ahead of wall-clock."""
+    """Return drift vs target: positive = too far ahead, negative = not yet at PIPE_LATENCY_MS ahead."""
     with lock:
         audio_time_s = stats["bytes_sent"] / BYTES_PER_SEC
-    return audio_time_s - (time.monotonic() - wall_start)
+    return audio_time_s - (time.monotonic() - wall_start) - PIPE_LATENCY_MS / 1000
 
 
 try:
