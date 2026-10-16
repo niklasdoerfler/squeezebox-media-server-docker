@@ -4,7 +4,7 @@ Run [Logitech Media Server (aka Squeezebox Media Server aka Lyrion Music Server)
 
 This image packages LMS with sensible defaults, optional PulseAudio passthrough, and a persistent data volume for your configuration, cache, and playlists.
 
-- Image: `niklasdoerfler/squeezebox-media-server-docker`
+- Image: `ghcr.io/niklasdoerfler/squeezebox-media-server-docker`
 - Example compose file: see `./docker-compose.yml` in this repository
 
 ## Features
@@ -44,7 +44,7 @@ docker run -d \
   -e PULSE_SERVER=unix:/tmp/pulseaudio.socket \
   -e PULSE_COOKIE=/tmp/pulseaudio.cookie \
   -u $(id -u) \
-  niklasdoerfler/squeezebox-media-server-docker
+  ghcr.io/niklasdoerfler/squeezebox-media-server-docker
 ```
 
 Then open the web UI at:
@@ -159,7 +159,7 @@ How to play the live stream:
 
 ## Upgrading
 ```bash
-docker pull niklasdoerfler/squeezebox-media-server-docker
+docker pull ghcr.io/niklasdoerfler/squeezebox-media-server-docker
 # If using compose
 docker compose pull && docker compose up -d
 # If using docker run
